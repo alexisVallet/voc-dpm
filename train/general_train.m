@@ -1,4 +1,4 @@
-function model = posonly_train(pos, impos, neg, n, note)
+function model = general_train(pos, impos, neg, n, note)
 % Train a model given positive and negative examples. Code adapted
 % from pascal_train to be more flexible for our purposes.
 
@@ -37,7 +37,8 @@ if nargin < 3
 end
 
 % Still load the config from voc_config(). We'll be ignoring
-% anything pascal specific though.
+% anything pascal specific though - hopefully the code is not too
+% tightly coupled with it underneath -_- .
 conf = voc_config();
 cachedir = conf.paths.model_dir;
 
