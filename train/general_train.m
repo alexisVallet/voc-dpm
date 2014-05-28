@@ -1,4 +1,4 @@
-function model = general_train(pos, impos, neg, n, note)
+function model = general_train(pos, impos, neg, n, note, name)
 % Train a model given positive and negative examples. Code adapted
 % from pascal_train to be more flexible for our purposes.
 
@@ -8,6 +8,8 @@ function model = general_train(pos, impos, neg, n, note)
 %     neg    Each negative example
 %     n      Number of components for the deformable parts model
 %     note   A note to attach to the output model
+%     name   A name for the model. Actually changes the class name
+%            in the underlying code, but that doesn't really matter.
 
 % Return values
 %     model  A model trained to detect the objects specified in
@@ -27,7 +29,7 @@ function model = general_train(pos, impos, neg, n, note)
 % -------------------------------------------------------
 
 % We'll assume there is only one class, name it with a placeholder
-cls = 'onlyclass';
+cls = name;
 
 seed_rand();
 

@@ -1,5 +1,5 @@
-function model = anime_train(posfolder, bbfolder, negfolder, n, note)
-% Trains a model using specific folders using the convention for my
+function [pos, neg, impos] = anime_data(posfolder, bbfolder, negfolder, n, note)
+% Loads data from specific folders using the convention for my
 % anime character detection method. Can however be used for any
 % other object detection tasks provided it follows the same
 % conventions. Very much inspired from pascal_data.m, hence the
@@ -31,8 +31,8 @@ function model = anime_train(posfolder, bbfolder, negfolder, n, note)
 % your project.
 % -------------------------------------------------------
 
-% First iterates over all image files, populating the impos array
-% by looking up the corresponding files in bbfolder
+% First iterates over all positive files, populating the impos and
+% pos arrays by looking up the corresponding files in bbfolder.
 files = dir(fullfile([posfolder '/*.jpg']));
 nbfiles = size(files);
 dataid = 1;
@@ -56,11 +56,15 @@ for i = 1:nbfiles
     bboxesflat = loadjson([bbfolder '/' name '_bb.json']);
     [bbrowsflat,bbcolsflat] = size(bboxesflat);
     % loadjson flattens the bounding boxes, such that the rows are
-    % alternatively dr ul dr ul etc. We reshape the array to make
-    % things easier.
-    bboxes = reshape(bboxesflat, bbrowsflat/2, bbcolsflat*2);
-    [nbboxes, four] = size(bboxes);
-    boxsizes = zeros(nbboxes,1)
+    % alternatively dr ul dr ul etc. Which is annoying as matlab
+    % uses column major order internally.
+    nbboxes = bbrowsflat/2;
+    bboxes = zeros(nbboxes, 4);
+    for bi = 1:nbboxes
+        bboxes(bi,:) = [bboxesflat(2*(bi - 1) + 1,:) bboxesflat(2*(bi ...
+                                                          - 1) + 2,:)];
+    end
+    boxsizes = zeros(nbboxes,1);
     flippedboxes = zeros(bbrowsflat/2, bbcolsflat*2);
 
     for bi = 1:nbboxes
@@ -77,19 +81,20 @@ for i = 1:nbfiles
         pos(posidx).dataids = dataid;
         boxsizes(bi) = (bbox(3) - bbox(1) + 1)*(bbox(4) - bbox(2) ...
                                                 + 1);
-        pos(posidx).sizes = boxsizes(bi)
+        pos(posidx).sizes = boxsizes(bi);
         dataid = dataid + 1;
         posidx = posidx + 1;
 
         % as well as a flipped example (apparently just flip the
         % bounding box and add flip=true ?)
-        flipbox = [imgcols - bbox(3) + 1, bbox(2), imgcols - bbox(1) + 1, bbox(4)];
+        flippedboxes(bi,:) = [imgcols - bbox(3) + 1, bbox(2), imgcols - bbox(1) ...
+                            + 1, bbox(4)];
         pos(posidx) = pos(posidx - 1);
-        pos(posidx).boxes = flipbox;
-        pos(posidx).x1 = flipbox(1);
-        pos(posidx).y1 = flipbox(2);
-        pos(posidx).x2 = flipbox(3);
-        pos(posidx).y2 = flipbox(4);
+        pos(posidx).boxes = flippedboxes(bi,:);
+        pos(posidx).x1 = flippedboxes(bi,1);
+        pos(posidx).y1 = flippedboxes(bi,2);
+        pos(posidx).x2 = flippedboxes(bi,3);
+        pos(posidx).y2 = flippedboxes(bi,4);
         pos(posidx).dataids = dataid;
         dataid = dataid + 1;
         posidx = posidx + 1;
@@ -98,13 +103,30 @@ for i = 1:nbfiles
     % Enter the full image info into impos
     impos(imposidx).im = fullfilename;
     impos(imposidx).boxes = bboxes;
-    impos(imposidx).dataids = dataid:dataid+nbboxes;
+    impos(imposidx).dataids = (dataid:dataid+nbboxes-1)';
     impos(imposidx).sizes = boxsizes;
     impos(imposidx).flip = false;
     imposidx = imposidx + 1;
-    dataids = dataids + nbboxes;
+    dataid = dataid + nbboxes;
 
     % And the flipped version
     impos(imposidx) = impos(imposidx - 1);
-    
+    impos(imposidx).boxes = flippedboxes;
+    impos(imposidx).dataids = (dataid:dataid+nbboxes-1)';
+    impos(imposidx).flip = true;
+    imposidx = imposidx + 1;
+    dataid = dataid + nbboxes;
 end
+
+% Then load negative examples in a similar fashion
+negfiles = dir(fullfile([negfolder '/*.png']));
+nbnegfiles = size(negfiles);
+neg = repmat(struct('im', [], 'flip', false, 'dataid', 0), [nbnegfiles, ...
+                    1]);
+
+for i = 1:nbnegfiles
+    fullfilename = [negfolder '/' negfiles(i).name];
+    neg(i).im = fullfilename;
+    neg(i).dataid = dataid;
+    dataid = dataid + 1;
+end 
