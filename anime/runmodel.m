@@ -9,6 +9,6 @@ for i = 1:nbfiles
     img = imread(fullfilename);
     [bbox,parts] = process(img, model, -0.5);
     close all;
-    showboxes(img, bbox);
+    showboxes(img, parts);
     waitforbuttonpress;
 end

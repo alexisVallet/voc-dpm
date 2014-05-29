@@ -1,4 +1,4 @@
-function [pos, neg, impos] = anime_data(posfolder, bbfolder, negfolder, n, note)
+function [pos, neg, impos] = anime_data(posfolders, bbfolder, negfolders, n, note)
 % Loads data from specific folders using the convention for my
 % anime character detection method. Can however be used for any
 % other object detection tasks provided it follows the same
@@ -6,11 +6,12 @@ function [pos, neg, impos] = anime_data(posfolder, bbfolder, negfolder, n, note)
 % copyright notice yadda yadda.
 
 % Arguments:
-%     posfolder    folder for positive examples, containing solely
-%                  images.
+%     posfolders   folders for positive examples, containing solely
+%                  images. cell array of folders.
 %     bbfolder     folder containing json file specifying bounding
-%                  boxes for positive examples
-%     negfolder    folder containing negative example images.
+%                  boxes for positive examples.
+%     negfolders   folders containing negative example images. cell
+%                  array of folders.
 %     n            number of components for the mixture model.
 %     note         note to include with the trained data.
 
@@ -31,10 +32,35 @@ function [pos, neg, impos] = anime_data(posfolder, bbfolder, negfolder, n, note)
 % your project.
 % -------------------------------------------------------
 
+posfiles = cell(0);
+negfiles = cell(0);
+% First iterate over all the positive/negative folders to build the
+% full list of positive/negative files.
+nbfolders = size(posfolders);
+for folderidx = 1:nbfolders
+    % positives...
+    posfilenames = dir(fullfile([posfolders{folderidx} '/*.jpg']));
+    nbfilenames = size(posfilenames);
+    posfullpaths = cell(nbfilenames);
+    
+    for i = 1:nbfilenames
+        posfullpaths{i} = [posfolders{folderidx} '/' posfilenames(i).name];
+    end
+    posfiles = [posfiles; posfullpaths];
+
+    % and negatives.
+    negfilenames = dir(fullfile([negfolders{folderidx} '/*.png']));
+    negfullpaths = cell(size(negfilenames));
+    
+    for i = 1:size(negfilenames)
+        negfullpaths{i} = [negfolders{folderidx} '/' negfilenames(i).name];
+    end
+    negfiles = [negfiles; negfullpaths];
+end
+
 % First iterates over all positive files, populating the impos and
 % pos arrays by looking up the corresponding files in bbfolder.
-files = dir(fullfile([posfolder '/*.jpg']));
-nbfiles = size(files);
+nbfiles = size(posfiles);
 dataid = 1;
 % initialize the empty impos array
 impos = repmat(struct('im',[],'boxes',[],'dataids',[],'sizes',[], ...
@@ -48,11 +74,11 @@ posidx = 1;
 imposidx = 1;
 
 for i = 1:nbfiles
-    fullfilename = [posfolder '/' files(i).name]
+    fullfilename = posfiles{i};
     img = imread(fullfilename);
     [imgrows imgcols channels] = size(img);
     % lookup bounding boxes in the corresponding file
-    [pathstr,name,ext] = fileparts(files(i).name);
+    [pathstr,name,ext] = fileparts(fullfilename);
     bboxesflat = loadjson([bbfolder '/' name '_bb.json']);
     [bbrowsflat,bbcolsflat] = size(bboxesflat);
     % loadjson flattens the bounding boxes, such that the rows are
@@ -119,14 +145,13 @@ for i = 1:nbfiles
 end
 
 % Then load negative examples in a similar fashion
-negfiles = dir(fullfile([negfolder '/*.png']));
 nbnegfiles = size(negfiles);
 neg = repmat(struct('im', [], 'flip', false, 'dataid', 0), [nbnegfiles, ...
                     1]);
 
 for i = 1:nbnegfiles
-    fullfilename = [negfolder '/' negfiles(i).name];
+    fullfilename = negfiles{i};
     neg(i).im = fullfilename;
     neg(i).dataid = dataid;
     dataid = dataid + 1;
-end 
+end
