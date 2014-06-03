@@ -1,22 +1,32 @@
-function evaluatekfold(models, imgfolder, outfolder, usenms)
+function evaluatekfold(modelfilenames, imgfolder, outfolder, usenms)
 % Runs 'runevaluation' for each fold in a k-fold cross validation
 % thing.
 
 % Arguments
-%     models    struct array of DPMs.
-%     imgfolder root folder for the folds.
-%     outfolder output folder to write results to.
-%     usenms    use non-maximum suppression or not.
+%     modelfilenames cell array of model filenames.
+%     imgfolder      root folder for the folds.
+%     outfolder      output folder to write results to.
+%     usenms         use non-maximum suppression or not.
 
-if argin < 4
-    usenms = false;
+if nargin < 4
+    usenms = true;
 end
 
-k = len(models);
+% Load models
+k = size(modelfilenames);
+k = k(1);
+cellmodels = cell(k,1);
+
+for i=1:k
+    filename = modelfilenames{mod(i,k) + 1};
+    model = load(filename, '-mat');
+    cellmodels{i} = model.model;
+end
 
 for i = 1:k
-    subfolder = [outfolder '/' int2str(i) '/'];
+    subfolder = [outfolder '/' int2str(mod(i,k)) '/']
     mkdir(subfolder);
-    runevaluation(model, [imgfolder '/' int2str(i) '/positives/'], ...
+    runevaluation(cellmodels{i}, [imgfolder '/' int2str(mod(i,k)) '/positives/'], ...
                   subfolder, usenms);
+
 end

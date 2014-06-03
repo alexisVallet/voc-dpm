@@ -22,8 +22,8 @@ for i = 1:k
     % but only noticed in the middle of training (which takes a
     % long time). To save the already cached results, I just
     % swapped 5 for 0.
-    posfolders{i} = [imgfolder '/' int2str(mod(i, 5)) '/positives'];
-    negfolders{i} = [imgfolder '/' int2str(mod(i, 5)) '/negatives'];
+    posfolders{i} = [imgfolder '/' int2str(mod(i, k)) '/positives'];
+    negfolders{i} = [imgfolder '/' int2str(mod(i, k)) '/negatives'];
 end
 
 % Iterate over all number of components and test sets

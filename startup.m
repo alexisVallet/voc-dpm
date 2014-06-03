@@ -27,7 +27,7 @@ if isempty(G_STARTUP)
           'external', 'star-cascade', 'jsonlab', 'anime', ...
           'matgraph'};
   for i = 1:length(incl)
-    addpath(genpath(incl{i}));
+    addpath(genpath(incl{i}), '-end');
   end
   conf = voc_config();
   fprintf('%s is set up\n', conf.version);

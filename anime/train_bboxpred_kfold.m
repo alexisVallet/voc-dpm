@@ -1,4 +1,5 @@
-function models = train_bboxpred_kfold(k, models, imgfolder, gtfolder)
+function train_bboxpred_kfold(k, modelfolder, imgfolder, ...
+                              gtfolder, nbcomps)
 % Trains a bounding box predictor for all folds of a k-fold cross
 % validation.
 
@@ -15,9 +16,10 @@ function models = train_bboxpred_kfold(k, models, imgfolder, gtfolder)
 %     models    the same array as the input models, with bounding
 %               box predictors trained for each model.
 
-% Get subfolders from the image folder
+% Get subfolders from the image folder and models from model folder
 posfolders = cell(k,1);
 negfolders = cell(k,1);
+models = cell(k,1);
 
 for i = 1:k
     % Alright so the reason why it's mod(i,5) is that I messed up
@@ -25,11 +27,14 @@ for i = 1:k
     % but only noticed in the middle of training (which takes a
     % long time). To save the already cached results, I just
     % swapped 5 for 0.
-    posfolders{i} = [imgfolder '/' int2str(mod(i, 5)) '/positives'];
-    negfolders{i} = [imgfolder '/' int2str(mod(i, 5)) '/negatives'];
+    posfolders{i} = [imgfolder '/' int2str(mod(i, k)) '/positives'];
+    negfolders{i} = [imgfolder '/' int2str(mod(i, k)) '/' ...
+                     'negatives'];
+    models{i} = load([modelfolder '/' int2str(k) '-fold-' int2str(nbcomps) ...
+                      '-comps-' int2str(i) '-test.mat'], 'model');
 end
 
-tmpmodels = cell(k, 1);
+newmodels = cell(k, 1);
 
 % Train all the models for bounding box prediction
 for i=1:k
@@ -38,10 +43,13 @@ for i=1:k
     trainpos = posfolders(trainidxs);
     trainneg = posfolders(trainidxs);
 
-    tmpmodels{i} = general_bboxpred_train(models(i), trainpos, ...
+    newmodels{i} = general_bboxpred_train(models{i}.model, trainpos, ...
                                           gtfolder, trainneg);
 end
 
-% Because matlab sucks balls
-models = cell2mat(tmpmodels);
-
+% save each model
+for i=1:k
+    model = newmodels{i};
+    save([modelfolder '/' int2str(k) '-fold-' int2str(nbcomps) ...
+          '-comps-' int2str(i) '-test-bbpred.mat'], 'model');
+end

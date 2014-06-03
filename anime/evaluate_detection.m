@@ -19,6 +19,22 @@ function [tp,fp,fn,matching] = evaluate_detection(gtboxes, detboxes)
 
 % First build the bipartite graph for overlappings by testing all
 % pairs.
+    % Because matgraph might possibly be the worst library I've ever seen
+    global GRAPH_MAGIC;
+    capacity = 1;
+    
+    GRAPH_MAGIC.ngraphs = capacity;
+    
+    GRAPH_MAGIC.graphs = cell(capacity,1);  % hold the graphs
+    GRAPH_MAGIC.in_use = zeros(capacity,1); % flag to show if slot
+                                            % is free
+    
+    GRAPH_MAGIC.Q.array = [];
+    GRAPH_MAGIC.Q.first = 0;
+    GRAPH_MAGIC.Q.last = 0;
+    
+    set_large(1000);
+
     [nbgt pouet] = size(gtboxes);
     [nbdet prout] = size(detboxes);
 
@@ -55,6 +71,7 @@ function [tp,fp,fn,matching] = evaluate_detection(gtboxes, detboxes)
     % positives and detected boxes.
     fp = nbdet - tp;
     fn = nbgt - tp;
+    clear global GRAPH_MAGIC;
 end
 
 function area = boxarea(bbox)
