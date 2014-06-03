@@ -17,8 +17,13 @@ posfolders = cell(k,1);
 negfolders = cell(k,1);
 
 for i = 1:k
-    posfolders{i} = [imgfolder '/' int2str(i) '/positives'];
-    negfolders{i} = [imgfolder '/' int2str(i) '/negatives'];
+    % Alright so the reason why it's mod(i,5) is that I messed up
+    % the indices at first (the folds are stored in 0 based index)
+    % but only noticed in the middle of training (which takes a
+    % long time). To save the already cached results, I just
+    % swapped 5 for 0.
+    posfolders{i} = [imgfolder '/' int2str(mod(i, 5)) '/positives'];
+    negfolders{i} = [imgfolder '/' int2str(mod(i, 5)) '/negatives'];
 end
 
 % Iterate over all number of components and test sets
@@ -30,8 +35,7 @@ for nbcomp = nbcomps
         trainingnegfolders = negfolders(trainingidxs);
         
         [pos,neg,impos] = anime_data(trainingposfolders, bbfolder, ...
-                                     trainingnegfolders, nbcomp, ...
-                                     '');
+                                     trainingnegfolders);
         % run the actual training
         name = [int2str(k) '-fold-' int2str(nbcomp) '-comps-' ...
                 int2str(testsetidx) '-test'];
@@ -39,5 +43,3 @@ for nbcomp = nbcomps
         save([outfolder '/' name '.mat'], 'model');
     end
 end
-
-     

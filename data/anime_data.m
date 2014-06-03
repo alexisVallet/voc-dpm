@@ -1,4 +1,5 @@
-function [pos, neg, impos] = anime_data(posfolders, bbfolder, negfolders, n, note)
+function [pos, neg, impos] = anime_data(posfolders, bbfolder, ...
+                                        negfolders)
 % Loads data from specific folders using the convention for my
 % anime character detection method. Can however be used for any
 % other object detection tasks provided it follows the same
@@ -12,12 +13,13 @@ function [pos, neg, impos] = anime_data(posfolders, bbfolder, negfolders, n, not
 %                  boxes for positive examples.
 %     negfolders   folders containing negative example images. cell
 %                  array of folders.
-%     n            number of components for the mixture model.
-%     note         note to include with the trained data.
 
 % Return values
-%     model        A model trained to the detect the objects
-%                  specified as positive.
+%     pos          individual positive examples (one per bounding
+%                  box)
+%     impos        positive example images.
+%     neg          negatives examples.
+
 
 % AUTORIGHTS
 % -------------------------------------------------------
